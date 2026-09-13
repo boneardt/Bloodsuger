@@ -1,1 +1,5 @@
 .DS_Store
+config.php
+data/*.sqlite
+data/*.sqlite-*
+

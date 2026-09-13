@@ -1,0 +1,592 @@
+/* ---------- Self-hosted font (no external CDN — works with no internet) ---------- */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/inter-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/inter-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/inter-700.woff2') format('woff2');
+}
+
+/* ---------- Theme tokens ---------- */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  --bg: #faf9f5;
+  --bg-elevated: #ffffff;
+  --bg-muted: #f0eee6;
+  --text: #262624;
+  --text-muted: #7c7a73;
+  --border: #e6e4db;
+  --accent: #cc785c;
+  --accent-hover: #bd6b4f;
+  --accent-contrast: #ffffff;
+  --link: #b35c40;
+
+  /* Exact traffic-light colors, fixed by design — same in light and dark mode,
+     since these are the literal colors requested, not theme-derived tints.
+     Each has a matching -contrast text color chosen for readability (pure
+     yellow text on any page background is close to unreadable, so status is
+     always shown as a solid fill with contrasting text, never colored text
+     directly on the page background). */
+  --status-red: #ff0000;
+  --status-yellow: #ffff00;
+  --status-green: #008000;
+  --status-red-contrast: #ffffff;
+  --status-yellow-contrast: #000000;
+  --status-green-contrast: #ffffff;
+
+  --shadow: 0 1px 2px rgba(38, 38, 36, 0.06), 0 2px 8px rgba(38, 38, 36, 0.05);
+  --radius: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #262624;
+    --bg-elevated: #30302e;
+    --bg-muted: #3a3a37;
+    --text: #f2f0e9;
+    --text-muted: #a8a59c;
+    --border: #45443f;
+    --accent: #e08469;
+    --accent-hover: #e8957c;
+    --accent-contrast: #262624;
+    --link: #eda087;
+
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #262624;
+  --bg-elevated: #30302e;
+  --bg-muted: #3a3a37;
+  --text: #f2f0e9;
+  --text-muted: #a8a59c;
+  --border: #45443f;
+  --accent: #e08469;
+  --accent-hover: #e8957c;
+  --accent-contrast: #262624;
+  --link: #eda087;
+
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Base ---------- */
+
+* { box-sizing: border-box; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--link); }
+
+h1, h2 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.5em;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+.lede {
+  color: var(--text-muted);
+  max-width: 60ch;
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: 0.85em;
+}
+
+/* ---------- Header / nav ---------- */
+
+.site-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+
+.site-header__inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px 18px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--text-muted);
+  font-weight: 500;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.nav a:hover { color: var(--text); }
+
+.link-button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  min-height: 44px;
+}
+.link-button:hover { color: var(--text); }
+
+.logout-form { display: inline-flex; }
+
+.theme-toggle {
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  border-radius: 999px;
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---------- Forms & buttons ---------- */
+
+form label {
+  display: block;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="search"],
+input[type="date"],
+input[type="number"],
+input[type="file"],
+select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  min-height: 44px;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-muted);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.button--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+.button--primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+.button--ghost {
+  background: transparent;
+}
+
+.flash {
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+}
+.flash--success { background: var(--status-green); color: var(--status-green-contrast); border-color: transparent; }
+.flash--error { background: var(--status-red); color: var(--status-red-contrast); border-color: transparent; }
+.flash ul { margin: 0; padding-left: 1.2em; }
+
+/* ---------- Dashboard: averages ---------- */
+
+.averages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.average-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: var(--shadow);
+}
+/* The average is judged against the same thresholds as individual readings —
+   border, number color, and the icon+label badge below all carry the same
+   signal, so "is this a good average?" never depends on hue alone. */
+.average-card--red { border-left-color: var(--status-red); }
+.average-card--yellow { border-left-color: var(--status-yellow); }
+.average-card--green { border-left-color: var(--status-green); }
+
+.average-card__label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.average-card__value {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-size: 2.3rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--text);
+}
+/* The number itself stays neutral — pure yellow text would be nearly invisible
+   on the page background. The border strip and the badge below (solid fill +
+   contrasting text) carry the color signal instead. */
+
+.average-card__n {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.average-card__status {
+  margin-top: 6px;
+  align-self: flex-start;
+}
+.average-card__status .badge__label {
+  border-left: none;
+  padding-left: 0;
+}
+
+/* ---------- Filters ---------- */
+
+.filters {
+  margin-bottom: 20px;
+}
+
+.filters__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.filter-field {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  flex: 1 1 140px;
+}
+
+.filter-field--grow { flex: 2 1 220px; }
+
+.filters__chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.chip input { margin: 0; }
+.chip--green { background: var(--status-green); color: var(--status-green-contrast); border-color: var(--status-green); }
+.chip--yellow { background: var(--status-yellow); color: var(--status-yellow-contrast); border-color: var(--status-yellow); }
+.chip--red { background: var(--status-red); color: var(--status-red-contrast); border-color: var(--status-red); }
+/* Unchecking a chip fades it, rather than changing its color, so the exact
+   red/yellow/green fill stays constant and only its filtered-out state changes. */
+.chip:has(input:not(:checked)) { opacity: 0.4; }
+
+.filter-count {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+}
+
+/* ---------- Measurement list ---------- */
+
+.empty-state {
+  color: var(--text-muted);
+  padding: 32px 0;
+}
+
+.measurement-row {
+  border-bottom: 1px solid var(--border);
+}
+
+.measurement-row__summary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  text-align: left;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.measurement-row__date {
+  flex: 1 1 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  border: 1.5px solid transparent;
+}
+/* Color is never the only cue: each status also gets its own icon shape (▼▽✓△▲)
+   and an explicit text label, so it still reads correctly for colorblind users. */
+.badge--red { color: var(--status-red-contrast); background: var(--status-red); }
+.badge--yellow { color: var(--status-yellow-contrast); background: var(--status-yellow); }
+.badge--green { color: var(--status-green-contrast); background: var(--status-green); }
+
+.badge__icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.badge__label {
+  font-weight: 600;
+  font-size: 0.78rem;
+  opacity: 0.9;
+  padding-left: 6px;
+  border-left: 1px solid currentColor;
+}
+
+.measurement-row__note-flag {
+  position: relative;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+/* Desktop hover preview — a bonus quick-glance; tap/click on the row is the
+   always-available mechanism (see dashboard.js), so this is fine to hide on touch. */
+@media (hover: hover) {
+  .measurement-row__note-flag[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 0;
+    top: 130%;
+    z-index: 5;
+    width: max-content;
+    max-width: 280px;
+    background: var(--text);
+    color: var(--bg);
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.4;
+    box-shadow: var(--shadow);
+    white-space: pre-line;
+  }
+}
+
+.measurement-row__detail {
+  display: none;
+  padding: 0 4px 16px 4px;
+  color: var(--text-muted);
+}
+.measurement-row__detail p { margin: 4px 0; }
+.measurement-row__detail strong { color: var(--text); }
+
+.measurement-row.is-expanded .measurement-row__detail {
+  display: block;
+}
+
+.measurement-row.is-hidden-by-filter {
+  display: none;
+}
+
+/* ---------- Import result table ---------- */
+
+.import-result__summary { font-size: 1.1rem; }
+.import-result table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+.import-result th, .import-result td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ---------- Settings: accounts ---------- */
+
+.user-list {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+.user-list th, .user-list td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.role-badge {
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.role-badge--admin { color: var(--status-green-contrast); background: var(--status-green); }
+.role-badge--readonly { color: var(--text-muted); background: var(--bg-muted); }
+
+.card h2 { font-size: 1.3rem; }
+.card h3 { font-size: 1.05rem; margin-top: 0; }
+
+/* ---------- Settings: thresholds ---------- */
+
+.threshold-preview {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+.threshold-preview__segment { flex: 1; padding: 8px 4px; }
+.threshold-preview__segment--red { background: var(--status-red); color: var(--status-red-contrast); }
+.threshold-preview__segment--yellow { background: var(--status-yellow); color: var(--status-yellow-contrast); }
+.threshold-preview__segment--green { background: var(--status-green); color: var(--status-green-contrast); flex: 2; }
+
+/* ---------- Setup wizard ---------- */
+
+.setup-account {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.setup-account legend {
+  font-weight: 600;
+  padding: 0 6px;
+}
+
+.auth-page {
+  max-width: 420px;
+  margin: 40px auto 0;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 640px) {
+  .measurement-row__summary {
+    flex-wrap: wrap;
+  }
+  .nav {
+    gap: 10px 14px;
+  }
+}
