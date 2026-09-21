@@ -534,6 +534,9 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
   border-bottom: 1px solid var(--border);
 }
 
+.table-scroll { overflow-x: auto; }
+.table-scroll .user-list { margin-bottom: 0; white-space: nowrap; }
+
 .role-badge {
   font-weight: 600;
   font-size: 0.85rem;

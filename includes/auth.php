@@ -131,6 +131,31 @@ function bs_clear_login_attempts(string $identifier): void
     $stmt->execute([$identifier]);
 }
 
+const BS_LOGIN_LOG_KEEP = 1000;
+
+/** Audit trail shown to admins on logins.php. Never stores passwords. */
+function bs_log_login(string $username, bool $success): void
+{
+    $pdo = bs_db();
+    $stmt = $pdo->prepare('INSERT INTO login_log (username, ip, success, logged_at) VALUES (?, ?, ?, ?)');
+    $stmt->execute([
+        mb_substr($username, 0, 100),
+        $_SERVER['REMOTE_ADDR'] ?? 'unknown',
+        $success ? 1 : 0,
+        date('Y-m-d H:i:s'),
+    ]);
+    // Cap the table so a bot hammering the login form can't grow the database forever.
+    $pdo->exec('DELETE FROM login_log WHERE id <= (SELECT MAX(id) FROM login_log) - ' . BS_LOGIN_LOG_KEEP);
+}
+
+function bs_recent_logins(int $limit = 200): array
+{
+    $stmt = bs_db()->prepare('SELECT username, ip, success, logged_at FROM login_log ORDER BY id DESC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
 function bs_login_identifier(string $username): string
 {
     $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';

@@ -16,10 +16,20 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 - **Status is never color-only — user is colorblind.** Every status indicator (badges, chips, average-card border, PDF status column) pairs its color with a distinct icon (▼▽✓△▲) and an explicit text label (Low / Borderline low / In range / Borderline high / High), never relying on hue alone. The PDF table has a text status-code column (L/BL/OK/BH/H) alongside the color swatch for the same reason.
 - **Status colors are fixed exact values, not theme-derived tints**: red `#ff0000`, yellow `#ffff00`, green `#008000`, defined once in `:root` in `assets/css/style.css` and used identically in light and dark mode. Each pairs with a `-contrast` text color chosen for readability — importantly, **pure yellow text on the page background is nearly unreadable**, so status is always shown as a solid-fill chip/badge/border with contrasting text (white on red/green, black on yellow), never as raw colored text sitting directly on the page background.
 - **Login throttling is stored in SQLite (`login_attempts` table), not in-memory.** Shared hosting may route requests to different PHP worker processes, so an in-memory rate limiter wouldn't actually work.
+- **Login audit trail**: every successful and failed login is written to the `login_log` table (username as typed, IP, time — never the password) and shown on the admin-only `logins.php`. Pruned to the newest 1000 rows in `bs_log_login()`. Throttled attempts aren't logged. Separate from `login_attempts`, which is only for rate limiting.
 - **Setup wizard only creates the admin account.** The remaining accounts (up to `BS_MAX_USERS = 4` total, in `includes/auth.php`) are added later from the Settings page's "Accounts" section, not during first-run setup.
 - **CSV import upserts on the parsed timestamp** (unique column on `measurements.timestamp`), matching the Contour export's `DD.MM.YYYY HH.MM.SS` format. Re-importing the same file is idempotent (reports "updated", not "added" again). Bad rows are skipped with a reason, never abort the whole batch — see `includes/csv_import.php`.
 - **Passwords**: `password_hash()` with Argon2id if the PHP build supports it, falling back to bcrypt (cost from `config.php`). Never stored or logged in plaintext anywhere.
 - **PDF fonts**: `vendor/tfpdf/` bundles DejaVu Sans TTFs specifically for correct æ/ø/å rendering (the source CSV notes are in Danish). Don't swap in a font without checking Unicode coverage.
+
+## Live deployment — protect the data
+
+The app is **already deployed and holds real data** at `boneardt.co.uk/Bloodsugar`. When telling the user what to upload for an update:
+
+- **Never overwrite `data/` (contains `bloodsuger.sqlite` and possibly `-wal`/`-shm`) or the server's `config.php`.** The server's `config.php` differs from the local dev one (`cookie_secure` is `true` there).
+- Safe to overwrite: root `*.php` pages, `includes/`, `assets/`, root `.htaccess`, `config.sample.php`. `vendor/` only changes if tFPDF is touched.
+- Schema changes must be additive and idempotent (`CREATE TABLE IF NOT EXISTS` in `bs_migrate()` in `includes/db.php`), because it runs against the existing live database on every request. Never write a migration that drops or rewrites existing tables without an explicit backup step.
+- Remind the user to download `data/bloodsuger.sqlite` before any risky update.
 
 ## Things to double check before shipping a change
 

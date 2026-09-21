@@ -34,6 +34,7 @@ $flashes = bs_take_flashes();
       <?php if ($currentUser['role'] === 'admin'): ?>
         <a href="<?= bs_e(bs_url('import.php')) ?>">Import CSV</a>
         <a href="<?= bs_e(bs_url('settings.php')) ?>">Settings</a>
+        <a href="<?= bs_e(bs_url('logins.php')) ?>">Logins</a>
       <?php endif; ?>
       <a href="<?= bs_e(bs_url('export_pdf.php')) ?>">Export PDF</a>
       <form action="<?= bs_e(bs_url('logout.php')) ?>" method="post" class="logout-form">

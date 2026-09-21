@@ -89,6 +89,17 @@ function bs_migrate(PDO $pdo): void
         SQL);
     $pdo->exec('CREATE INDEX IF NOT EXISTS idx_login_attempts_identifier ON login_attempts(identifier, attempted_at)');
 
+    $pdo->exec(<<<'SQL'
+        CREATE TABLE IF NOT EXISTS login_log (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            username  TEXT NOT NULL,
+            ip        TEXT NOT NULL,
+            success   INTEGER NOT NULL,
+            logged_at TEXT NOT NULL
+        )
+        SQL);
+    $pdo->exec('CREATE INDEX IF NOT EXISTS idx_login_log_logged_at ON login_log(logged_at)');
+
     $defaults = [
         // Clinically-informed defaults (fasting target 4-7, post-meal target 8-10) — admin can adjust in Settings.
         'threshold_red_low_max'  => '3.9',

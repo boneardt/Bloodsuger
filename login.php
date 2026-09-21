@@ -24,11 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = bs_find_user_by_username($usernameValue);
         if ($user && password_verify($password, $user['password_hash'])) {
             bs_clear_login_attempts($identifier);
+            bs_log_login($usernameValue, true);
             session_regenerate_id(true);
             $_SESSION['user_id'] = $user['id'];
             bs_redirect('index.php');
         } else {
             bs_record_login_attempt($identifier);
+            bs_log_login($usernameValue, false);
             $error = 'Invalid username or password.';
         }
     }
