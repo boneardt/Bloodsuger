@@ -30,6 +30,31 @@ function bs_all_users(): array
     return bs_db()->query('SELECT id, username, role, created_at FROM users ORDER BY id')->fetchAll();
 }
 
+function bs_find_user_by_id(int $id): ?array
+{
+    $stmt = bs_db()->prepare('SELECT * FROM users WHERE id = ?');
+    $stmt->execute([$id]);
+    $user = $stmt->fetch();
+    return $user ?: null;
+}
+
+function bs_count_admins(): int
+{
+    return (int) bs_db()->query("SELECT COUNT(*) FROM users WHERE role = 'admin'")->fetchColumn();
+}
+
+function bs_update_password(int $userId, string $password): void
+{
+    $stmt = bs_db()->prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+    $stmt->execute([bs_hash_password($password), $userId]);
+}
+
+function bs_delete_user(int $userId): void
+{
+    $stmt = bs_db()->prepare('DELETE FROM users WHERE id = ?');
+    $stmt->execute([$userId]);
+}
+
 const BS_MAX_USERS = 4;
 
 function bs_hash_password(string $password): string

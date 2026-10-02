@@ -77,6 +77,8 @@ require __DIR__ . '/includes/layout_header.php';
         $detail = bs_classify_detail((float) $row['value'], $thresholds);
         $color = $detail['color'];
         $hasNotes = !empty($row['notes']);
+        $hasActivity = !empty($row['activity']);
+        $hasLocation = !empty($row['country']);
         $detailFields = [
             'Meal marker' => $row['meal_marker'],
             'Activity'    => $row['activity'],
@@ -93,14 +95,20 @@ require __DIR__ . '/includes/layout_header.php';
            data-notes="<?= bs_e(mb_strtolower($row['notes'] ?? '', 'UTF-8')) ?>">
         <button type="button" class="measurement-row__summary">
           <span class="measurement-row__date"><?= bs_e(bs_format_dt_display($row['timestamp'])) ?></span>
+          <?php if ($hasActivity): ?>
+            <span class="row-icon" data-tooltip="<?= bs_e($row['activity']) ?>" aria-hidden="true">&#127939;</span>
+          <?php endif; ?>
+          <?php if ($hasLocation): ?>
+            <span class="row-icon" data-tooltip="<?= bs_e($row['country']) ?>" aria-hidden="true">&#128205;</span>
+          <?php endif; ?>
+          <?php if ($hasNotes): ?>
+            <span class="row-icon" data-tooltip="<?= bs_e($row['notes']) ?>" aria-hidden="true">&#128172;</span>
+          <?php endif; ?>
           <span class="measurement-row__value badge badge--<?= bs_e($color) ?>">
             <span class="badge__icon" aria-hidden="true"><?= bs_e($detail['icon']) ?></span>
             <span class="badge__value"><?= bs_e(number_format((float) $row['value'], 1)) ?> mmol/L</span>
             <span class="badge__label"><?= bs_e($detail['label']) ?></span>
           </span>
-          <?php if ($hasNotes): ?>
-            <span class="measurement-row__note-flag" data-tooltip="<?= bs_e($row['notes']) ?>" aria-hidden="true">&#128172;</span>
-          <?php endif; ?>
         </button>
         <div class="measurement-row__detail">
           <?php foreach ($detailFields as $label => $value): ?>
