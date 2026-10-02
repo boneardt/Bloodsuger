@@ -6,9 +6,9 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 
 - **Plain PHP 8.1+, no framework, no build step, no Composer.** One `.php` file per page at the project root (`index.php`, `login.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `export_pdf.php`); shared logic in `includes/`.
 - **SQLite via PDO** (`data/bloodsuger.sqlite`, gitignored, created automatically at first request by `includes/db.php`). No MySQL.
-- **Deployment target: IONOS shared hosting, FTP-only (no SSH/shell access).** This is why there's no Composer — the PDF library (`vendor/tfpdf/`) was downloaded directly from its GitHub source and vendored as plain files.
-- **Site is deployed in a subdirectory**, not domain root (`boneardt.co.uk/Bloodsugar`). Every internal link/redirect/asset path MUST go through `bs_url()` / `bs_asset()` (in `includes/helpers.php`), never a hardcoded leading `/`. These auto-detect the base path from `$_SERVER['SCRIPT_NAME']`, so the app also still works if moved to root or a different folder name later.
-- **No local PHP or Node available in the dev environment this was built in.** Code has only been manually reviewed, never executed. Test with `php -S localhost:8000` (or on the real IONOS host) before trusting changes — don't assume correctness from review alone.
+- **Designed for typical low-cost shared PHP hosting, FTP-only access assumed (no SSH/Composer required).** This is why there's no Composer — the PDF library (`vendor/tfpdf/`) was downloaded directly from its GitHub source and vendored as plain files. (The original deployment this was built for was IONOS shared hosting specifically, but nothing in the code assumes that host.)
+- **The app may be deployed at the domain root or in any subdirectory.** Every internal link/redirect/asset path MUST go through `bs_url()` / `bs_asset()` (in `includes/helpers.php`), never a hardcoded leading `/`. These auto-detect the base path from `$_SERVER['SCRIPT_NAME']`, so the same codebase works unmodified wherever it's uploaded.
+- **No local PHP or Node available in the dev environment this was built in.** Code has only been manually reviewed, never executed. Test with `php -S localhost:8000` (or on the real hosting target) before trusting changes — don't assume correctness from review alone.
 
 ## Key decisions (the "why" isn't obvious from the code alone)
 
@@ -27,7 +27,7 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 
 ## Live deployment — protect the data
 
-The app is **already deployed and holds real data** at `boneardt.co.uk/Bloodsugar`. When telling the user what to upload for an update:
+Whoever is running this may already have a deployment with real data in it. When telling them what to upload for an update:
 
 - **Never overwrite `data/` (contains `bloodsuger.sqlite` and possibly `-wal`/`-shm`) or the server's `config.php`.** The server's `config.php` differs from the local dev one (`cookie_secure` is `true` there).
 - Safe to overwrite: root `*.php` pages, `includes/`, `assets/`, root `.htaccess`, `config.sample.php`. `vendor/` only changes if tFPDF is touched.
