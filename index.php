@@ -43,6 +43,20 @@ require __DIR__ . '/includes/layout_header.php';
       <?php endif; ?>
     </div>
   <?php endforeach; ?>
+
+  <div class="average-card" id="period-average-card" hidden
+       data-threshold-red-low-max="<?= bs_e((string) $thresholds['red_low_max']) ?>"
+       data-threshold-green-min="<?= bs_e((string) $thresholds['green_min']) ?>"
+       data-threshold-green-max="<?= bs_e((string) $thresholds['green_max']) ?>"
+       data-threshold-red-high-min="<?= bs_e((string) $thresholds['red_high_min']) ?>">
+    <span class="average-card__label">Selected period</span>
+    <span class="average-card__value" id="period-average-value">—</span>
+    <span class="average-card__n" id="period-average-n">0 readings</span>
+    <span class="badge average-card__status" id="period-average-badge" hidden>
+      <span class="badge__icon" aria-hidden="true"></span>
+      <span class="badge__label"></span>
+    </span>
+  </div>
 </section>
 
 <section class="filters" aria-label="Filter measurements">
