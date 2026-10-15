@@ -4,7 +4,7 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 
 ## Stack & constraints
 
-- **Plain PHP 8.1+, no framework, no build step, no Composer.** One `.php` file per page at the project root (`index.php`, `login.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`); shared logic in `includes/`.
+- **Plain PHP 8.1+, no framework, no build step, no Composer.** One `.php` file per page at the project root (`index.php`, `login.php`, `logout.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`, `forbidden.php`); shared logic in `includes/`.
 - **SQLite via PDO** (`data/bloodsuger.sqlite`, gitignored, created automatically at first request by `includes/db.php`). No MySQL.
 - **Designed for typical low-cost shared PHP hosting, FTP-only access assumed (no SSH/Composer required).** This is why there's no Composer — the PDF library (`vendor/tfpdf/`) was downloaded directly from its GitHub source and vendored as plain files. (The original deployment this was built for was IONOS shared hosting specifically, but nothing in the code assumes that host.)
 - **The app may be deployed at the domain root or in any subdirectory.** Every internal link/redirect/asset path MUST go through `bs_url()` / `bs_asset()` (in `includes/helpers.php`), never a hardcoded leading `/`. These auto-detect the base path from `$_SERVER['SCRIPT_NAME']`, so the same codebase works unmodified wherever it's uploaded.
@@ -40,7 +40,7 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 Whoever is running this may already have a deployment with real data in it. When telling them what to upload for an update:
 
 - **Never overwrite `data/` (contains `bloodsuger.sqlite` and possibly `-wal`/`-shm`) or the server's `config.php`.** The server's `config.php` differs from the local dev one (`cookie_secure` is `true` there).
-- Safe to overwrite: root `*.php` pages, `includes/`, `assets/`, root `.htaccess`, `config.sample.php`. `vendor/` only changes if tFPDF is touched.
+- Safe to overwrite: root `*.php` pages, `includes/`, `assets/`, root `.htaccess`, `config.sample.php`. `vendor/` only changes if tFPDF is touched. `tools/mac-agent/` is never deployed to the server at all — it runs locally on whoever's own Mac wants the auto-sync agent, entirely separate from the PHP app.
 - Schema changes must be additive and idempotent (`CREATE TABLE IF NOT EXISTS` in `bs_migrate()` in `includes/db.php`), because it runs against the existing live database on every request. Never write a migration that drops or rewrites existing tables without an explicit backup step.
 - Remind the user to download `data/bloodsuger.sqlite` before any risky update.
 

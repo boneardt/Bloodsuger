@@ -109,13 +109,14 @@ If the Contour app is set to share Blood Glucose readings into Apple Health, a S
 
 **3. Run it** by tapping the Shortcut. This only moves data that's *already* in Apple Health, so the Contour app still needs to have synced with the meter over Bluetooth first, same as today.
 
-### Both options
+### All three options
 
-Check the dashboard after running either Shortcut — new rows appear with "Apple Health" or the CSV's own data source as their data source (visible when you tap a row open). Run the same Shortcut again immediately: the same readings come back as "updated" rather than duplicating, since the server matches by exact timestamp — safe to re-run as often as you like.
+Check the dashboard after syncing by any of these three methods — new rows appear with "Apple Health" or the CSV's own data source as their data source (visible when you tap a row open). Trigger the same sync again immediately (re-run the Shortcut, or re-save the CSV into the Mac agent's watched folder): the same readings come back as "updated" rather than duplicating, since the server matches by exact timestamp — safe to re-run as often as you like.
 
 **Troubleshooting:**
-- A `401` response means the token doesn't match — copy it again from Settings (it may have been regenerated, which invalidates both URLs' old token at once).
+- A `401` response means the token doesn't match — copy it again from Settings (it may have been regenerated, which invalidates all three options' old token at once).
 - A `422` response means the upload/data was rejected — for the Health sync, check your Health app's Blood Glucose unit is mmol/L, not mg/dL (Health app → Browse → Blood Glucose → unit); for the CSV sync, check the shared file is actually the Raw Data CSV, not one of the PDF reports.
+- For the Mac agent (Option C) specifically, check `~/Library/Logs/bloodsuger-sync.log` first — it logs every attempt (success or failure) with the actual HTTP status, which is more reliable than anything shown on the phone.
 
 ## Project layout
 
@@ -124,6 +125,7 @@ Check the dashboard after running either Shortcut — new rows appear with "Appl
 - `assets/` — self-hosted fonts, CSS, and the two small JS files (theme toggle, dashboard filtering/tap-to-expand).
 - `vendor/tfpdf/` — the [tFPDF](https://github.com/Setasign/tFPDF) library (vendored directly, no Composer) used for the PDF export, with bundled DejaVu Sans fonts for correct æ/ø/å rendering.
 - `data/` — the SQLite database file lives here at runtime (gitignored).
+- `tools/mac-agent/` — the optional Mac auto-sync agent installer (`install.sh`/`uninstall.sh`), see "Automated sync" below. Runs on your own Mac, not on the server — never uploaded with the rest of the site.
 
 ## Notes on the threshold model
 
