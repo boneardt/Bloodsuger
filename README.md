@@ -44,18 +44,64 @@ Beyond the manual **Import CSV** page (always available, no setup needed), there
 
 The Contour Diabetes app has its own CSV export (My Care → Reports → Raw Data (csv) → Share). This sends the **exact same CSV** Import CSV already accepts — notes, activity, meal marker, meal grams, medication, country, everything — so this is the more complete of the two options.
 
+**Important: this has to be a two-tap routine, not one-tap.** Contour's Share action hands third-party extensions (including a Shortcut) an auto-generated cover-note instead of the actual CSV — confirmed through extensive testing, not fixable from the Shortcut side. Only Contour's own "Gem i Arkiver" (Save to Files) gets the real file, so the Shortcut has to be triggered from *there* instead of from Contour directly.
+
 **1. Get the CSV import URL and sync token** from Settings.
 
 **2. Build the Shortcut** (Shortcuts app → `+`):
-1. Tap the Shortcut's settings (ⓘ) → **Use as Share Sheet Action** (or **Action Extension**, naming varies by iOS version) → restrict accepted types to "Files" or leave as "Anything".
+1. Tap the Shortcut's settings (ⓘ) → **Use as Share Sheet Action** (or **Action Extension**, naming varies by iOS version) → restrict accepted types to "Files".
 2. Add **Get Contents of URL**:
    - Method: `POST`
    - URL: the CSV import URL from Settings
    - Headers: `X-Sync-Token` = the sync token from Settings
    - Request Body: `Form`, one field named `csv`, type **File**, value: **Shortcut Input** (the file received from the share sheet).
-3. Optionally add **Show Notification** after it, showing the response (it replies with a line like `added=3 updated=12 skipped=0`).
+3. Optionally add **Show Notification** after it, showing the response (it replies with a line like `added=3 updated=12 skipped=0`) — though in testing, notifications triggered from a Share Sheet Action Extension weren't always reliably displayed; don't take a missing notification alone as proof of failure, check the dashboard too.
 
-**3. Use it:** in the Contour app, generate the Raw Data report as usual, tap **Share**, and pick your Shortcut instead of Mail/Save to Files.
+**3. Use it — two taps:**
+1. In Contour: Reports → Raw Data (csv) → Share → **"Gem i Arkiver"** (Save to Files) — *not* your Shortcut directly.
+2. Open the **Files** app, find that saved file, tap **Share** on it, and pick your Shortcut this time.
+
+### Option C: a Mac watches a synced folder (fully automatic, no Shortcut needed)
+
+If you have a Mac that's usually on, this is the least-friction option of the three: **one tap** on your phone, and the Mac does the rest on its own — no Shortcut, no Share Sheet involved at all.
+
+**How it works:** you save Contour's CSV export into a folder that's synced via iCloud Drive to a folder on your Mac. A small script on the Mac, triggered automatically by macOS the moment that folder changes (not polling), finds the newest Contour export and uploads it.
+
+**Setup (once):**
+
+1. Pick (or create) a folder that syncs via iCloud Drive to both your iPhone's Files app and your Mac — confirm it actually syncs by saving a test file from the phone and checking it appears on the Mac within a minute or two. A plain folder under `~/Documents` on the Mac usually works, but verify it rather than assume — iCloud Drive sync can be surprisingly flaky to debug otherwise.
+2. On the Mac, store your sync token somewhere a script can read it, without ever putting it in a file you might commit or share:
+   ```
+   mkdir -p ~/.config/bloodsuger
+   echo -n "Paste your sync token: "; read -s token; echo
+   echo "$token" > ~/.config/bloodsuger/token
+   chmod 600 ~/.config/bloodsuger/token
+   unset token
+   ```
+3. Create a script (e.g. `~/Library/Application Support/Bloodsuger/sync.sh`) along these lines, adjusted for your folder and domain:
+   ```bash
+   #!/bin/bash
+   FOLDER="/path/to/your/synced/folder"
+   TOKEN_FILE="$HOME/.config/bloodsuger/token"
+   URL="https://your-domain.example/bloodsuger/sync_csv.php"
+   LOG="$HOME/Library/Logs/bloodsuger-sync.log"
+
+   TOKEN=$(cat "$TOKEN_FILE")
+   NEWEST=$(ls -t "$FOLDER"/ContourCSVReport*.csv 2>/dev/null | head -1)
+   [ -z "$NEWEST" ] && exit 0
+
+   RESPONSE=$(curl -s -w $'\n''HTTP_STATUS:%{http_code}' -X POST "$URL" \
+       -H "X-Sync-Token: $TOKEN" -F "csv=@${NEWEST}")
+   echo "[$(date '+%Y-%m-%d %H:%M:%S')] synced $(basename "$NEWEST") -> ${RESPONSE//$'\n'/ | }" >> "$LOG"
+   ```
+   Make it executable: `chmod 700 ~/Library/Application\ Support/Bloodsuger/sync.sh`.
+4. Create a LaunchAgent at `~/Library/LaunchAgents/com.bloodsuger.sync.plist` with a `WatchPaths` entry pointing at your folder, running that script, then load it:
+   ```
+   launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.bloodsuger.sync.plist
+   ```
+5. **Important, easy to miss**: a script launched this way (by `launchd`, not from an interactive Terminal session) does **not** automatically get the same access to your Documents folder that your own Terminal session has — macOS's privacy protections block it silently (no error dialog, it just finds nothing). Grant it explicitly: **System Settings → Privacy & Security → Full Disk Access → add `/bin/bash`** (press ⌘⇧G in the file picker to type the path directly, since it won't show up by browsing). Without this step, the script will run but never find your files.
+
+**Use it:** Contour → Share → "Gem i Arkiver" into your synced folder. That's it — the Mac picks it up on its own within a few seconds, as long as it's on and signed in. If the Mac is asleep when you save, nothing is lost — the next time the folder changes, the script always grabs whichever Contour export is newest.
 
 ### Option B: read from Apple Health (lighter, less data)
 

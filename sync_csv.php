@@ -38,35 +38,6 @@ if ($error !== null) {
 
 $result = bs_import_csv($file['tmp_name'], basename($file['name']));
 
-// Temporary diagnostics while debugging the iOS Shortcut path: the Shortcut's own
-// notification display has proven unreliable when triggered from a Share Sheet
-// Action Extension, so write what actually happened to a plain log file instead —
-// check it via FTP rather than relying on anything shown on the phone.
-$receivedBytes = filesize($file['tmp_name']);
-$logLine = sprintf(
-    "[%s] received=%d bytes name=%s added=%d updated=%d skipped=%d",
-    date('Y-m-d H:i:s'),
-    $receivedBytes,
-    basename($file['name']),
-    $result['added'],
-    $result['updated'],
-    count($result['skipped'])
-);
-if (!empty($result['skipped'])) {
-    $first = $result['skipped'][0];
-    $rawSnippet = mb_substr((string) $first['raw'], 0, 200);
-    $logLine .= sprintf(' | first skip: row=%d reason=%s raw="%s"', $first['row'], $first['reason'], $rawSnippet);
-}
-// Also capture the first/last 300 bytes of what was actually received on disk,
-// so we can see directly whether the multipart upload delivered the full file.
-$rawContent = file_get_contents($file['tmp_name']);
-$logLine .= sprintf(
-    "\n  content start: %s\n  content end:   %s",
-    addcslashes(mb_substr($rawContent, 0, 300), "\n\r"),
-    addcslashes(mb_substr($rawContent, -300), "\n\r")
-);
-file_put_contents(__DIR__ . '/data/sync_debug.log', $logLine . "\n\n", FILE_APPEND | LOCK_EX);
-
 echo sprintf(
     "added=%d updated=%d skipped=%d",
     $result['added'],
