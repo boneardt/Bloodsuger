@@ -10,6 +10,12 @@ function bs_config(): array
             die('Missing config.php — copy config.sample.php to config.php and adjust it for your environment.');
         }
         $config = require $path;
+
+        // All stored timestamps are naive "local wall-clock" values with no timezone
+        // offset (both CSV-imported and Apple Health-synced), so PHP must be told what
+        // "local" means — otherwise it falls back to its ini default (often UTC on
+        // shared hosts), silently skewing rolling-average cutoffs and sync timestamps.
+        date_default_timezone_set($config['timezone'] ?? 'UTC');
     }
     return $config;
 }
@@ -107,6 +113,11 @@ function bs_migrate(PDO $pdo): void
         'threshold_green_max'    => '10.0',
         'threshold_red_high_min' => '13.0',
         'setup_complete'         => 'false',
+        // Shared secret for the Apple Health sync endpoint (sync_health.php) — a
+        // non-browser client, so it's authenticated by this token instead of a
+        // session/CSRF. INSERT OR IGNORE below means this random value is only ever
+        // used the first time; regenerating later goes through Settings, not here.
+        'sync_token' => bin2hex(random_bytes(32)),
     ];
 
     $stmt = $pdo->prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (:key, :value)');

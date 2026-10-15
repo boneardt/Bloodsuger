@@ -99,6 +99,34 @@ function bs_thresholds(): array
     ];
 }
 
+function bs_sync_token(): string
+{
+    return bs_get_setting('sync_token', '');
+}
+
+function bs_regenerate_sync_token(): string
+{
+    $token = bin2hex(random_bytes(32));
+    bs_set_setting('sync_token', $token);
+    return $token;
+}
+
+/**
+ * Auth for sync_health.php — a non-browser client (an iOS Shortcut), so there's no
+ * session/CSRF token to check. Instead it's a long shared secret sent as a header,
+ * compared with hash_equals() like the CSRF check below. Exits the request on failure.
+ */
+function bs_require_sync_token(): void
+{
+    $provided = $_SERVER['HTTP_X_SYNC_TOKEN'] ?? '';
+    $expected = bs_sync_token();
+    if ($expected === '' || !is_string($provided) || $provided === '' || !hash_equals($expected, $provided)) {
+        http_response_code(401);
+        header('Content-Type: text/plain');
+        die('unauthorized');
+    }
+}
+
 // --- Flash messages (one-time, shown on next page render) ---
 
 function bs_flash(string $type, string $message): void

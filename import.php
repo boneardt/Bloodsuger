@@ -14,18 +14,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $maxBytes = (int) (bs_config()['max_upload_bytes'] ?? 5 * 1024 * 1024);
     $file = $_FILES['csv'] ?? null;
+    $formError = bs_validate_csv_upload($file, $maxBytes);
 
-    if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
-        $formError = 'Please choose a CSV file to upload.';
-    } elseif ($file['error'] !== UPLOAD_ERR_OK) {
-        $formError = 'Upload failed (error code ' . (int) $file['error'] . '). Please try again.';
-    } elseif ($file['size'] > $maxBytes) {
-        $formError = 'That file is too large (max ' . round($maxBytes / 1024 / 1024, 1) . ' MB).';
-    } elseif (!preg_match('/\.csv$/i', $file['name'])) {
-        $formError = 'Please upload a .csv file.';
-    } elseif (!is_uploaded_file($file['tmp_name'])) {
-        $formError = 'Upload failed. Please try again.';
-    } else {
+    if ($formError === null) {
         $result = bs_import_csv($file['tmp_name'], basename($file['name']));
     }
 }

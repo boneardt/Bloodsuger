@@ -11,7 +11,7 @@ return [
     'db_path' => __DIR__ . '/data/bloodsuger.sqlite',
 
     // Require HTTPS for session cookies. Set to true once your site is served over
-    // HTTPS (IONOS provides free SSL — enable it in your hosting control panel).
+    // HTTPS (most hosts offer free SSL, e.g. via Let's Encrypt — enable it first).
     // Leave false only for local testing over plain http://localhost.
     'cookie_secure' => true,
 
@@ -20,4 +20,10 @@ return [
 
     // Maximum accepted CSV upload size, in bytes.
     'max_upload_bytes' => 5 * 1024 * 1024,
+
+    // PHP timezone identifier (see https://www.php.net/timezones) for your own local
+    // time. All stored timestamps are naive "local wall-clock" values (no timezone
+    // offset), so this must be set correctly for rolling averages and the Apple
+    // Health sync to use the right day boundaries and times.
+    'timezone' => 'Europe/Copenhagen',
 ];

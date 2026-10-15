@@ -83,6 +83,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             bs_flash('success', 'Password updated for "' . $target['username'] . '".');
             bs_redirect('settings.php');
         }
+    } elseif ($formName === 'regenerate_sync_token') {
+        bs_regenerate_sync_token();
+        bs_flash('success', 'Sync token regenerated. Update the token in your Shortcut before syncing again.');
+        bs_redirect('settings.php');
     } elseif ($formName === 'delete_user') {
         $targetId = (int) ($_POST['user_id'] ?? 0);
         $target = bs_find_user_by_id($targetId);
@@ -105,6 +109,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $users = bs_all_users();
 $canAddUser = count($users) < BS_MAX_USERS;
+
+$syncScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$syncHost = $syncScheme . '://' . $_SERVER['HTTP_HOST'];
+$healthSyncUrl = $syncHost . bs_url('sync_health.php');
+$csvSyncUrl = $syncHost . bs_url('sync_csv.php');
 
 $pageTitle = 'Settings';
 require __DIR__ . '/includes/layout_header.php';
@@ -243,6 +252,30 @@ require __DIR__ . '/includes/layout_header.php';
   <?php else: ?>
     <p class="hint">All <?= BS_MAX_USERS ?> accounts are in use.</p>
   <?php endif; ?>
+</section>
+
+<section class="card">
+  <h2>Automated sync (iOS Shortcuts)</h2>
+  <p class="lede">Two ways to get readings in from an iPhone without a manual upload each time — both share the one token below. See the README for how to build each Shortcut.</p>
+
+  <label>
+    CSV import URL <span class="hint">(full data — notes, activity, etc.; share the Contour app's "Raw Data (csv)" report to a Shortcut pointed here)</span>
+    <input type="text" value="<?= bs_e($csvSyncUrl) ?>" readonly onclick="this.select()">
+  </label>
+  <label>
+    Apple Health sync URL <span class="hint">(value + timestamp only; reads Blood Glucose samples that Contour already shares into Health)</span>
+    <input type="text" value="<?= bs_e($healthSyncUrl) ?>" readonly onclick="this.select()">
+  </label>
+  <label>
+    Sync token <span class="hint">(used by both — sent as the X-Sync-Token header)</span>
+    <input type="text" value="<?= bs_e(bs_sync_token()) ?>" readonly onclick="this.select()">
+  </label>
+
+  <form method="post" onsubmit="return confirm('Regenerate the sync token? Any Shortcut using the old one will stop working until you update it.');">
+    <?= bs_csrf_field() ?>
+    <input type="hidden" name="form_name" value="regenerate_sync_token">
+    <button type="submit" class="button button--ghost">Regenerate token</button>
+  </form>
 </section>
 
 <?php require __DIR__ . '/includes/layout_footer.php'; ?>
