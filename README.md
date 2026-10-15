@@ -65,41 +65,29 @@ The Contour Diabetes app has its own CSV export (My Care → Reports → Raw Dat
 
 If you have a Mac that's usually on, this is the least-friction option of the three: **one tap** on your phone, and the Mac does the rest on its own — no Shortcut, no Share Sheet involved at all.
 
-**How it works:** you save Contour's CSV export into a folder that's synced via iCloud Drive to a folder on your Mac. A small script on the Mac, triggered automatically by macOS the moment that folder changes (not polling), finds the newest Contour export and uploads it.
+**How it works:** you save Contour's CSV export into a folder that's synced via iCloud Drive to a folder on your Mac. A small agent on the Mac, triggered automatically by macOS the moment that folder changes (not polling), finds the newest Contour export and uploads it.
 
-**Setup (once):**
+**Setup — run the installer:**
 
-1. Pick (or create) a folder that syncs via iCloud Drive to both your iPhone's Files app and your Mac — confirm it actually syncs by saving a test file from the phone and checking it appears on the Mac within a minute or two. A plain folder under `~/Documents` on the Mac usually works, but verify it rather than assume — iCloud Drive sync can be surprisingly flaky to debug otherwise.
-2. On the Mac, store your sync token somewhere a script can read it, without ever putting it in a file you might commit or share:
+1. Pick (or create) a folder that syncs via iCloud Drive to both your iPhone's Files app and your Mac — confirm it actually syncs by saving a test file from the phone and checking it appears on the Mac within a minute or two before going further. A plain folder under `~/Documents` on the Mac usually works, but verify it rather than assume — iCloud Drive sync can be surprisingly flaky to debug otherwise.
+2. Clone this repo onto the Mac (or just download `tools/mac-agent/`).
+3. Open Terminal, `cd` into the repo, and run:
    ```
-   mkdir -p ~/.config/bloodsuger
-   echo -n "Paste your sync token: "; read -s token; echo
-   echo "$token" > ~/.config/bloodsuger/token
-   chmod 600 ~/.config/bloodsuger/token
-   unset token
+   ./tools/mac-agent/install.sh
    ```
-3. Create a script (e.g. `~/Library/Application Support/Bloodsuger/sync.sh`) along these lines, adjusted for your folder and domain:
-   ```bash
-   #!/bin/bash
-   FOLDER="/path/to/your/synced/folder"
-   TOKEN_FILE="$HOME/.config/bloodsuger/token"
-   URL="https://your-domain.example/bloodsuger/sync_csv.php"
-   LOG="$HOME/Library/Logs/bloodsuger-sync.log"
+4. It'll ask for the CSV import URL and sync token (from your site's Settings → "Automated sync") and the folder from step 1 (you can drag the folder from Finder into the Terminal window instead of typing the path), then set everything up and walk you through the one manual step that can't be automated: granting Full Disk Access to `/bin/bash` in System Settings, which `launchd`-run scripts need in order to see your Documents folder at all (silently blocked otherwise, no error — macOS's privacy protections, not a bug).
 
-   TOKEN=$(cat "$TOKEN_FILE")
-   NEWEST=$(ls -t "$FOLDER"/ContourCSVReport*.csv 2>/dev/null | head -1)
-   [ -z "$NEWEST" ] && exit 0
+To remove it later (or before re-running with different settings), run `./tools/mac-agent/uninstall.sh`.
 
-   RESPONSE=$(curl -s -w $'\n''HTTP_STATUS:%{http_code}' -X POST "$URL" \
-       -H "X-Sync-Token: $TOKEN" -F "csv=@${NEWEST}")
-   echo "[$(date '+%Y-%m-%d %H:%M:%S')] synced $(basename "$NEWEST") -> ${RESPONSE//$'\n'/ | }" >> "$LOG"
-   ```
-   Make it executable: `chmod 700 ~/Library/Application\ Support/Bloodsuger/sync.sh`.
-4. Create a LaunchAgent at `~/Library/LaunchAgents/com.bloodsuger.sync.plist` with a `WatchPaths` entry pointing at your folder, running that script, then load it:
-   ```
-   launchctl bootstrap "gui/$(id -u)" ~/Library/LaunchAgents/com.bloodsuger.sync.plist
-   ```
-5. **Important, easy to miss**: a script launched this way (by `launchd`, not from an interactive Terminal session) does **not** automatically get the same access to your Documents folder that your own Terminal session has — macOS's privacy protections block it silently (no error dialog, it just finds nothing). Grant it explicitly: **System Settings → Privacy & Security → Full Disk Access → add `/bin/bash`** (press ⌘⇧G in the file picker to type the path directly, since it won't show up by browsing). Without this step, the script will run but never find your files.
+<details>
+<summary>What the installer actually sets up, if you'd rather do it by hand or want to see what it's doing</summary>
+
+- `~/.config/bloodsuger/token` (600 perms) and `~/.config/bloodsuger/config` (`SYNC_URL=`, `WATCH_FOLDER=`) — your settings, never committed anywhere.
+- `~/Library/Application Support/Bloodsuger/sync.sh` — reads that config, finds the newest `ContourCSVReport*.csv` in the watched folder, and `curl`s it to `sync_csv.php` with the token as an `X-Sync-Token` header.
+- `~/Library/LaunchAgents/com.bloodsuger.sync.plist` — a `launchd` agent with a `WatchPaths` entry on your folder, running that script, loaded via `launchctl bootstrap`.
+- The Full Disk Access grant described above (the installer can open the right System Settings pane for you, but can't flip the toggle itself).
+
+</details>
 
 **Use it:** Contour → Share → "Gem i Arkiver" into your synced folder. That's it — the Mac picks it up on its own within a few seconds, as long as it's on and signed in. If the Mac is asleep when you save, nothing is lost — the next time the folder changes, the script always grabs whichever Contour export is newest.
 
