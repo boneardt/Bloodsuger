@@ -1,0 +1,40 @@
+{
+  "host": "ionos-bloodsuger",
+  "remote_root": "/web/Bloodsuger",
+  "site_url": "https://boneardt.co.uk/Bloodsuger",
+  "paths": [
+    ".htaccess",
+    "index.php",
+    "login.php",
+    "logout.php",
+    "setup.php",
+    "import.php",
+    "settings.php",
+    "logins.php",
+    "sync_health.php",
+    "sync_csv.php",
+    "export_pdf.php",
+    "forbidden.php",
+    "config.sample.php",
+    "includes",
+    "assets",
+    "vendor",
+    "data"
+  ],
+  "skip": [
+    "data/bloodsuger.sqlite",
+    "data/bloodsuger.sqlite-wal",
+    "data/bloodsuger.sqlite-shm"
+  ],
+  "slow": ["vendor"],
+  "php_dir": ".",
+  "checks": [
+    {"path": "/login.php", "expect": 200},
+    {"path": "/", "expect": 302, "location_contains": "login.php"},
+    {"path": "/data/bloodsuger.sqlite", "expect": 403},
+    {"path": "/includes/db.php", "expect": 403},
+    {"path": "/vendor/tfpdf/tfpdf.php", "expect": 403},
+    {"path": "/config.sample.php", "expect": 403}
+  ],
+  "legacy": ["README.md", "CLAUDE.md"]
+}
