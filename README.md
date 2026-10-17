@@ -27,6 +27,12 @@ For keeping track of blood sugar measurements. A small self-hosted PHP app: uplo
 
 If you have SSH access, `git clone` the repo directly on the server instead of uploading files one by one — everything else above still applies.
 
+## Dashboard
+
+- **Filter** readings by date range (a calendar-style date picker, not the browser's native date input), status (in range / borderline / out of range), or a notes search.
+- **View chart** opens a glucose trend chart for whatever date range is currently selected, in a lightbox — the clinical target bands are shown in red/yellow/green, same colors as the status badges elsewhere on the page. **Save to PDF** generates a standalone PDF of that same chart.
+- **Learn** (in the nav) is general background on diabetes and blood glucose, with links to a few reputable sources — not medical advice, and not a substitute for your own clinic's guidance or the thresholds you've set in Settings.
+
 ## CSV format
 
 The importer was built and tested against a **Contour Plus Blue** meter's CSV export, with **Danish column headers**. It expects:
@@ -120,7 +126,7 @@ Check the dashboard after syncing by any of these three methods — new rows app
 
 ## Project layout
 
-- `index.php`, `login.php`, `logout.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`, `forbidden.php` — one file per page, plain PHP.
+- `index.php`, `login.php`, `logout.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `learn.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`, `export_chart_pdf.php`, `forbidden.php` — one file per page, plain PHP.
 - `includes/` — shared logic: `db.php` (SQLite connection + schema), `auth.php` (sessions, login, roles), `helpers.php` (CSRF, flashes, CSV field parsing), `csv_import.php`, `color_classifier.php`, `aggregates.php`, `pdf_builder.php`, and the shared page chrome (`layout_header.php` / `layout_footer.php`).
 - `assets/` — self-hosted fonts, CSS, and the two small JS files (theme toggle, dashboard filtering/tap-to-expand).
 - `vendor/tfpdf/` — the [tFPDF](https://github.com/Setasign/tFPDF) library (vendored directly, no Composer) used for the PDF export, with bundled DejaVu Sans fonts for correct æ/ø/å rendering.
