@@ -5,9 +5,11 @@
   var VIEW_W = 720;
   var VIEW_H = 400;
   var MARGIN = { top: 20, right: 20, bottom: 40, left: 54 };
+  var CORNER_R = 12; // plot-frame corner radius, in the same spirit as --radius elsewhere
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-  var tooltipEl = null;
+  var currentTooltipEl = null;
+  var clipInstanceCounter = 0;
 
   function el(name, attrs) {
     var node = document.createElementNS(NS, name);
@@ -29,39 +31,51 @@
     return Number(parts[2]) + ' ' + MONTHS[Number(parts[1]) - 1] + ' ' + parts[0] + ', ' + time;
   }
 
-  // One shared floating tooltip, visually matching the site's existing
-  // .row-icon[data-tooltip] hover tooltip — reused as a real positioned
-  // element (not that same ::after mechanism) because SVG shape elements
-  // don't reliably support CSS generated content across browsers.
-  function ensureTooltip() {
-    if (!tooltipEl) {
-      tooltipEl = document.createElement('div');
-      tooltipEl.className = 'chart-tooltip';
-      tooltipEl.setAttribute('role', 'tooltip');
-      document.body.appendChild(tooltipEl);
+  // Catmull-Rom-to-cubic-Bezier: a smooth curve that still passes through every
+  // real point exactly (unlike an approximating spline) — only changes how the
+  // line *looks* between readings, never implies a value that wasn't recorded.
+  function smoothPath(pts) {
+    if (pts.length === 0) return '';
+    if (pts.length === 1) return 'M' + pts[0][0] + ',' + pts[0][1];
+    var d = 'M' + pts[0][0] + ',' + pts[0][1];
+    for (var i = 0; i < pts.length - 1; i++) {
+      var p0 = pts[i === 0 ? i : i - 1];
+      var p1 = pts[i];
+      var p2 = pts[i + 1];
+      var p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+      var c1x = p1[0] + (p2[0] - p0[0]) / 6;
+      var c1y = p1[1] + (p2[1] - p0[1]) / 6;
+      var c2x = p2[0] - (p3[0] - p1[0]) / 6;
+      var c2y = p2[1] - (p3[1] - p1[1]) / 6;
+      d += ' C' + c1x + ',' + c1y + ' ' + c2x + ',' + c2y + ' ' + p2[0] + ',' + p2[1];
     }
-    return tooltipEl;
+    return d;
   }
 
+  // The tooltip must live inside the <dialog> (as a sibling of the chart, not
+  // appended to document.body) — a modal <dialog> renders in the browser's top
+  // layer, which always paints above anything that isn't also promoted to that
+  // layer, regardless of z-index. A tooltip appended to document.body would be
+  // invisible, hidden behind the dialog's own backdrop.
   function showTooltip(targetEl, text) {
-    var tooltip = ensureTooltip();
-    tooltip.textContent = text;
-    tooltip.classList.add('is-visible');
+    if (!currentTooltipEl) return;
+    currentTooltipEl.textContent = text;
+    currentTooltipEl.classList.add('is-visible');
     var rect = targetEl.getBoundingClientRect();
-    var tipRect = tooltip.getBoundingClientRect();
+    var tipRect = currentTooltipEl.getBoundingClientRect();
     var left = rect.left + rect.width / 2 - tipRect.width / 2;
     left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
     var top = rect.top - tipRect.height - 8;
     if (top < 8) {
       top = rect.bottom + 8;
     }
-    tooltip.style.left = left + 'px';
-    tooltip.style.top = top + 'px';
+    currentTooltipEl.style.left = left + 'px';
+    currentTooltipEl.style.top = top + 'px';
   }
 
   function hideTooltip() {
-    if (tooltipEl) {
-      tooltipEl.classList.remove('is-visible');
+    if (currentTooltipEl) {
+      currentTooltipEl.classList.remove('is-visible');
     }
   }
 
@@ -70,7 +84,19 @@
   // bs_classify_detail() for the server-side mirror of this same band model).
   function render(mountEl, points, thresholds) {
     mountEl.innerHTML = '';
-    hideTooltip();
+
+    // mountEl.parentElement (.lightbox__body) isn't cleared by the line above,
+    // unlike mountEl itself, so a tooltip from a previous render can linger —
+    // remove it before mounting a fresh one.
+    var tooltipContainer = mountEl.parentElement || document.body;
+    var staleTooltip = tooltipContainer.querySelector('.chart-tooltip');
+    if (staleTooltip) {
+      staleTooltip.parentNode.removeChild(staleTooltip);
+    }
+    currentTooltipEl = document.createElement('div');
+    currentTooltipEl.className = 'chart-tooltip';
+    currentTooltipEl.setAttribute('role', 'tooltip');
+    tooltipContainer.appendChild(currentTooltipEl);
 
     var plotW = VIEW_W - MARGIN.left - MARGIN.right;
     var plotH = VIEW_H - MARGIN.top - MARGIN.bottom;
@@ -100,6 +126,30 @@
     });
     svg.addEventListener('mouseleave', hideTooltip);
 
+    // Everything inside the plot frame (background, bands, dashed lines, the
+    // curve, and the points) is clipped to one rounded rect, so nothing pokes
+    // out past the frame's rounded corners — matching the site's generally
+    // soft, rounded design language instead of a sharp clinical frame.
+    clipInstanceCounter += 1;
+    var clipId = 'chart-clip-' + clipInstanceCounter;
+    var defs = el('defs', {});
+    var clipRect = el('rect', { x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, rx: CORNER_R, ry: CORNER_R });
+    var clipPath = el('clipPath', { id: clipId });
+    clipPath.appendChild(clipRect);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+
+    var plotGroup = el('g', { 'clip-path': 'url(#' + clipId + ')' });
+    svg.appendChild(plotGroup);
+
+    // Explicit theme-matched background — without this the plot area defaults
+    // to a light/transparent surface that clashes starkly with the dialog's
+    // own (possibly dark) background, and the band tints below render as
+    // bright pastels instead of muted ones against the wrong backdrop.
+    plotGroup.appendChild(el('rect', {
+      x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: 'var(--bg-elevated)'
+    }));
+
     // Background threshold bands — only the yellow/red zones are shaded; the
     // green "in range" zone is left as the plain chart background, matching
     // the request's "showing the upper and lower (yellow and red area)".
@@ -113,23 +163,18 @@
       var top = yScale(Math.min(band.to, yMax));
       var bottom = yScale(Math.max(band.from, yMin));
       if (bottom <= top) return;
-      svg.appendChild(el('rect', {
+      plotGroup.appendChild(el('rect', {
         x: MARGIN.left, y: top, width: plotW, height: bottom - top,
         fill: band.color, 'fill-opacity': '0.15'
       }));
     });
-
-    svg.appendChild(el('rect', {
-      x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH,
-      fill: 'none', stroke: 'var(--border)', 'stroke-width': '1'
-    }));
 
     // Dotted boundary lines at each of the 4 threshold values, with their value
     // labelled on the Y axis — SVG's native stroke-dasharray needs no hand-rolled
     // dash logic, unlike the PDF path (vendored tFPDF has no dash support).
     [thresholds.redLowMax, thresholds.greenMin, thresholds.greenMax, thresholds.redHighMin].forEach(function (t) {
       var y = yScale(t);
-      svg.appendChild(el('line', {
+      plotGroup.appendChild(el('line', {
         x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y,
         stroke: 'var(--text-muted)', 'stroke-width': '1', 'stroke-dasharray': '4 4'
       }));
@@ -140,12 +185,11 @@
       svg.appendChild(label);
     });
 
-    // The glucose line itself.
-    var pointsAttr = points.map(function (p, i) {
-      return xScale(i) + ',' + yScale(p.value);
-    }).join(' ');
-    svg.appendChild(el('polyline', {
-      points: pointsAttr, fill: 'none', stroke: 'var(--accent)', 'stroke-width': '2'
+    // The glucose line, as a smooth curve through the exact same points.
+    var coords = points.map(function (p, i) { return [xScale(i), yScale(p.value)]; });
+    plotGroup.appendChild(el('path', {
+      d: smoothPath(coords), fill: 'none', stroke: 'var(--accent)', 'stroke-width': '2.5',
+      'stroke-linecap': 'round', 'stroke-linejoin': 'round'
     }));
 
     // Each reading gets a small visible marker plus a larger invisible hit
@@ -157,13 +201,13 @@
       var cy = yScale(p.value);
       var label = formatDateTime(p.timestamp) + ' — ' + p.value.toFixed(1) + ' mmol/L';
 
-      var dot = el('circle', { cx: cx, cy: cy, r: '4', fill: 'var(--accent)' });
+      var dot = el('circle', { cx: cx, cy: cy, r: '5', fill: 'var(--accent)' });
       var title = el('title', {});
       title.textContent = label;
       dot.appendChild(title);
 
       var hit = el('circle', {
-        cx: cx, cy: cy, r: '10', fill: 'transparent', tabindex: '0',
+        cx: cx, cy: cy, r: '11', fill: 'transparent', tabindex: '0',
         role: 'img', 'aria-label': label, style: 'cursor: pointer; outline: none;'
       });
       hit.addEventListener('mouseenter', function () { showTooltip(hit, label); });
@@ -172,9 +216,16 @@
       hit.addEventListener('blur', hideTooltip);
       hit.addEventListener('click', function () { showTooltip(hit, label); });
 
-      svg.appendChild(dot);
-      svg.appendChild(hit);
+      plotGroup.appendChild(dot);
+      plotGroup.appendChild(hit);
     });
+
+    // Rounded frame, drawn on top of the clipped group (unclipped itself —
+    // it's just the stroked outline of the exact same rounded rect).
+    svg.appendChild(el('rect', {
+      x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, rx: CORNER_R, ry: CORNER_R,
+      fill: 'none', stroke: 'var(--border)', 'stroke-width': '1'
+    }));
 
     // X-axis: first/last reading dates only, to keep this simple.
     if (points.length > 0) {
