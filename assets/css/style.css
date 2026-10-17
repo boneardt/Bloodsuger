@@ -725,7 +725,7 @@ dialog.lightbox {
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 0;
-  max-width: 720px;
+  max-width: 960px; /* matches .container's max-width, not a new one-off value */
   width: calc(100vw - 32px);
 }
 dialog.lightbox::backdrop {
@@ -770,29 +770,54 @@ dialog.lightbox::backdrop {
   display: block;
 }
 
+/* Legend reuses the site's existing .badge classes (same pills used on
+   measurement rows and average cards) instead of ad hoc swatches, so it
+   matches the rest of the site's visual language. */
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 18px;
-  margin-top: 10px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
+  gap: 8px 12px;
+  margin-top: 14px;
+  align-items: center;
 }
-.chart-legend__item {
+.badge--accent { color: var(--accent-contrast); background: var(--accent); }
+
+.chart-legend__text {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
-.chart-legend__swatch {
+.chart-legend__dash {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-  flex-shrink: 0;
+  width: 18px;
+  border-top: 2px dashed var(--text-muted);
 }
-.chart-legend__swatch--yellow { background: var(--status-yellow); }
-.chart-legend__swatch--red { background: var(--status-red); }
-.chart-legend__swatch--line { background: var(--accent); }
+
+/* Floating tooltip for chart points — same look as .row-icon's hover
+   tooltip above, but a real positioned element rather than a ::after
+   pseudo-element, since SVG shape elements don't reliably support CSS
+   generated content across browsers. */
+.chart-tooltip {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  background: var(--text);
+  color: var(--bg);
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  line-height: 1.4;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.chart-tooltip.is-visible {
+  opacity: 1;
+}
 
 /* ---------- Responsive ---------- */
 

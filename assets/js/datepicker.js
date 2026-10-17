@@ -167,14 +167,18 @@
     display.setAttribute('aria-expanded', 'true');
 
     function position() {
+      // The popover is position: fixed, so its coordinates are already
+      // viewport-relative — getBoundingClientRect() gives viewport-relative
+      // coordinates too, so no scrollX/scrollY offset belongs here (adding
+      // one would drift the popover away from the input as the page scrolls).
       var rect = display.getBoundingClientRect();
       var popRect = popover.getBoundingClientRect();
       var left = rect.left;
       if (left + popRect.width > window.innerWidth - 8) {
         left = Math.max(8, window.innerWidth - popRect.width - 8);
       }
-      popover.style.top = (rect.bottom + window.scrollY + 6) + 'px';
-      popover.style.left = (left + window.scrollX) + 'px';
+      popover.style.top = (rect.bottom + 6) + 'px';
+      popover.style.left = left + 'px';
     }
     position();
 

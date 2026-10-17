@@ -85,4 +85,11 @@
       dialog.close();
     }
   });
+
+  // Don't leave a stale floating chart tooltip visible after the lightbox closes.
+  dialog.addEventListener('close', function () {
+    if (window.BsChart && window.BsChart.hideTooltip) {
+      window.BsChart.hideTooltip();
+    }
+  });
 })();
