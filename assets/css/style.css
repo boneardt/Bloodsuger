@@ -232,7 +232,8 @@ input[type="search"],
 input[type="date"],
 input[type="number"],
 input[type="file"],
-select {
+select,
+.datepicker__display {
   display: block;
   width: 100%;
   margin-top: 6px;
@@ -623,6 +624,175 @@ input:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible
   max-width: 420px;
   margin: 40px auto 0;
 }
+
+/* ---------- Date picker ----------
+   z-index scale: 10 for this popover, kept below the chart lightbox's native
+   <dialog> top-layer (which needs no explicit z-index of its own — see below).
+   The existing tooltip's z-index: 5 (above, .row-icon) is left as-is. */
+
+input[type="date"][data-datepicker] {
+  display: none;
+}
+
+.filter-field .datepicker__display {
+  text-align: left;
+  cursor: pointer;
+}
+
+.datepicker-popover {
+  position: fixed;
+  z-index: 10;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 12px;
+  width: 260px;
+  color: var(--text);
+}
+
+.datepicker-popover__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.datepicker-popover__nav {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  min-height: 32px;
+  min-width: 32px;
+  border-radius: 8px;
+}
+.datepicker-popover__nav:hover { background: var(--bg-muted); }
+
+.datepicker-popover__weekdays,
+.datepicker-popover__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.datepicker-popover__weekdays span {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+
+.datepicker-popover__day {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  min-height: 32px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.datepicker-popover__day:hover { background: var(--bg-muted); }
+.datepicker-popover__day--outside { color: var(--text-muted); opacity: 0.5; }
+/* "Today" gets an outline, not a fill, so it reads differently from
+   "selected" without relying on color alone. */
+.datepicker-popover__day--today { border-color: var(--accent); }
+.datepicker-popover__day--selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 700;
+}
+
+.datepicker-popover__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ---------- Chart lightbox ---------- */
+
+dialog.lightbox {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 0;
+  max-width: 720px;
+  width: calc(100vw - 32px);
+}
+dialog.lightbox::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.lightbox__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.lightbox__header h2 { margin: 0; font-size: 1.1rem; }
+
+.lightbox__close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  min-height: 44px;
+  min-width: 44px;
+}
+.lightbox__close:hover { color: var(--text); }
+
+.lightbox__body {
+  padding: 16px 20px;
+}
+
+.lightbox__footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+#chart-mount svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.chart-legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.chart-legend__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.chart-legend__swatch--yellow { background: var(--status-yellow); }
+.chart-legend__swatch--red { background: var(--status-red); }
+.chart-legend__swatch--line { background: var(--accent); }
 
 /* ---------- Responsive ---------- */
 

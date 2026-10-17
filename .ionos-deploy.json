@@ -14,6 +14,7 @@
     "sync_health.php",
     "sync_csv.php",
     "export_pdf.php",
+    "export_chart_pdf.php",
     "forbidden.php",
     "config.sample.php",
     "includes",

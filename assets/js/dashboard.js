@@ -116,6 +116,10 @@
       toInput.value = '';
       searchInput.value = '';
       colorInputs.forEach(function (c) { c.checked = true; });
+      // Dispatch 'input' so datepicker.js's display buttons (which only
+      // listen for that event, not direct .value assignment) stay in sync.
+      fromInput.dispatchEvent(new Event('input', { bubbles: true }));
+      toInput.dispatchEvent(new Event('input', { bubbles: true }));
       applyFilters();
     });
   }

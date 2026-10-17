@@ -63,11 +63,11 @@ require __DIR__ . '/includes/layout_header.php';
   <div class="filters__row">
     <label class="filter-field">
       From
-      <input type="date" id="filter-from">
+      <input type="date" id="filter-from" data-datepicker>
     </label>
     <label class="filter-field">
       To
-      <input type="date" id="filter-to">
+      <input type="date" id="filter-to" data-datepicker>
     </label>
     <label class="filter-field filter-field--grow">
       Search notes
@@ -79,9 +79,24 @@ require __DIR__ . '/includes/layout_header.php';
     <label class="chip chip--yellow"><input type="checkbox" class="filter-color" value="yellow" checked> <span aria-hidden="true">△</span> Borderline</label>
     <label class="chip chip--red"><input type="checkbox" class="filter-color" value="red" checked> <span aria-hidden="true">▲</span> Out of range</label>
     <button type="button" id="filter-clear" class="button button--ghost">Clear filters</button>
+    <button type="button" id="view-chart" class="button button--primary">View chart</button>
   </div>
   <p class="filter-count"><span id="filter-count-visible"><?= count($rows) ?></span> of <?= count($rows) ?> measurements shown</p>
 </section>
+
+<dialog id="chart-lightbox" class="lightbox" aria-label="Glucose chart">
+  <div class="lightbox__header">
+    <h2>Glucose chart</h2>
+    <button type="button" class="lightbox__close" aria-label="Close">&times;</button>
+  </div>
+  <div class="lightbox__body">
+    <div id="chart-mount"></div>
+    <p id="chart-empty" hidden>No measurements in this date range.</p>
+  </div>
+  <div class="lightbox__footer">
+    <a id="chart-pdf-link" class="button button--primary" href="#" data-base-url="<?= bs_e(bs_url('export_chart_pdf.php')) ?>">Save to PDF</a>
+  </div>
+</dialog>
 
 <section class="measurements" aria-label="Measurements">
   <?php if (empty($rows)): ?>
