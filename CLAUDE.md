@@ -4,7 +4,7 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 
 ## Stack & constraints
 
-- **Plain PHP 8.1+, no framework, no build step, no Composer.** One `.php` file per page at the project root (`index.php`, `login.php`, `logout.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`, `export_chart_pdf.php`, `forbidden.php`); shared logic in `includes/`.
+- **Plain PHP 8.1+, no framework, no build step, no Composer.** One `.php` file per page at the project root (`index.php`, `login.php`, `logout.php`, `setup.php`, `import.php`, `settings.php`, `logins.php`, `learn.php`, `sync_health.php`, `sync_csv.php`, `export_pdf.php`, `export_chart_pdf.php`, `forbidden.php`); shared logic in `includes/`.
 - **SQLite via PDO** (`data/bloodsuger.sqlite`, gitignored, created automatically at first request by `includes/db.php`). No MySQL.
 - **Designed for typical low-cost shared PHP hosting, FTP-only access assumed (no SSH/Composer required).** This is why there's no Composer — the PDF library (`vendor/tfpdf/`) was downloaded directly from its GitHub source and vendored as plain files. (The original deployment this was built for was IONOS shared hosting specifically, but nothing in the code assumes that host.)
 - **The app may be deployed at the domain root or in any subdirectory.** Every internal link/redirect/asset path MUST go through `bs_url()` / `bs_asset()` (in `includes/helpers.php`), never a hardcoded leading `/`. These auto-detect the base path from `$_SERVER['SCRIPT_NAME']`, so the same codebase works unmodified wherever it's uploaded.

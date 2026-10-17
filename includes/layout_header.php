@@ -31,6 +31,7 @@ $flashes = bs_take_flashes();
     <?php if ($currentUser): ?>
     <nav class="nav">
       <a href="<?= bs_e(bs_url('index.php')) ?>">Dashboard</a>
+      <a href="<?= bs_e(bs_url('learn.php')) ?>">Learn</a>
       <?php if ($currentUser['role'] === 'admin'): ?>
         <a href="<?= bs_e(bs_url('import.php')) ?>">Import CSV</a>
         <a href="<?= bs_e(bs_url('settings.php')) ?>">Settings</a>

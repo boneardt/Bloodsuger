@@ -11,6 +11,7 @@
     "import.php",
     "settings.php",
     "logins.php",
+    "learn.php",
     "sync_health.php",
     "sync_csv.php",
     "export_pdf.php",
