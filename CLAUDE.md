@@ -35,6 +35,20 @@ A self-hosted PHP app for tracking blood glucose readings: upload Contour meter 
 - **Explicit server timezone** (`config.php`'s `timezone`, applied once via `date_default_timezone_set()` in `bs_config()`, `includes/db.php`): needed for the Apple Health sync to convert an ISO8601 timestamp-with-offset into this app's naive-local storage format correctly — and incidentally fixes a latent bug, since `includes/aggregates.php`'s rolling-average cutoffs relied on PHP's ini-default timezone (often UTC on shared hosts) before this was added.
 - **Base font size is one root declaration**: `html { font-size: 15px; }` in `assets/css/style.css`. Every other `font-size` in that file is `rem`/`em`, so this is the single place that scales all text on the site together — don't add a new hardcoded `px` font-size elsewhere, or it won't scale with the rest.
 
+## Deploying
+
+SFTP deploy is set up via the `ionos-sftp` skill: `.ionos-deploy.json` (committed, no secrets) points at `/web/Bloodsuger` on the IONOS account shared with other projects on this machine (same SFTP key/login as e.g. StockNews, different folder). Use:
+
+```
+python3 ~/.claude/skills/ionos-sftp/sync.py status   # diff local vs. server
+python3 ~/.claude/skills/ionos-sftp/sync.py push      # upload new/changed files
+python3 ~/.claude/skills/ionos-sftp/sync.py check     # verify the live URL checks
+```
+
+`data/bloodsuger.sqlite*` is explicitly in the config's `skip` list — the live database is never touched by `push`. `push --delete` and the skill's `clean` command need the user's explicit go-ahead first (per the skill's own rule), same bar as any other destructive action.
+
+Checked empirically (see `check`'s results): the skill's general warning that `Require`/`FilesMatch` directives in `.htaccess` commonly cause 500 errors on IONOS does **not** hold on this account — the existing `.htaccess` files (`data/`, `includes/`, `vendor/`, root) correctly return `403`, not `500`. Don't preemptively "fix" these to the `RewriteRule ^ - [F]` pattern the skill recommends elsewhere; they're confirmed working as-is here.
+
 ## Live deployment — protect the data
 
 Whoever is running this may already have a deployment with real data in it. When telling them what to upload for an update:
