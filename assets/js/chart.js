@@ -2,10 +2,10 @@
   'use strict';
 
   var NS = 'http://www.w3.org/2000/svg';
-  var VIEW_W = 720;
-  var VIEW_H = 400;
-  var MARGIN = { top: 20, right: 20, bottom: 40, left: 54 };
-  var CORNER_R = 12; // plot-frame corner radius, in the same spirit as --radius elsewhere
+  var VIEW_W = 1200;
+  var VIEW_H = 520;
+  var MARGIN = { top: 28, right: 28, bottom: 56, left: 72 };
+  var CORNER_R = 16; // plot-frame corner radius, in the same spirit as --radius elsewhere
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   var currentTooltipEl = null;
@@ -63,12 +63,19 @@
     currentTooltipEl.classList.add('is-visible');
     var rect = targetEl.getBoundingClientRect();
     var tipRect = currentTooltipEl.getBoundingClientRect();
-    var left = rect.left + rect.width / 2 - tipRect.width / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - tipRect.width - 8));
-    var top = rect.top - tipRect.height - 8;
-    if (top < 8) {
-      top = rect.bottom + 8;
+
+    // Beside the dot by default (to its right), flipping to the left if that
+    // would overflow the viewport's right edge — reads as "next to the point"
+    // rather than floating above/below the chart.
+    var gap = 10;
+    var left = rect.right + gap;
+    if (left + tipRect.width > window.innerWidth - 8) {
+      left = rect.left - gap - tipRect.width;
     }
+    left = Math.max(8, left);
+    var top = rect.top + rect.height / 2 - tipRect.height / 2;
+    top = Math.max(8, Math.min(top, window.innerHeight - tipRect.height - 8));
+
     currentTooltipEl.style.left = left + 'px';
     currentTooltipEl.style.top = top + 'px';
   }
@@ -142,20 +149,19 @@
     var plotGroup = el('g', { 'clip-path': 'url(#' + clipId + ')' });
     svg.appendChild(plotGroup);
 
-    // Explicit theme-matched background — without this the plot area defaults
-    // to a light/transparent surface that clashes starkly with the dialog's
-    // own (possibly dark) background, and the band tints below render as
-    // bright pastels instead of muted ones against the wrong backdrop.
+    // Fixed white background, same reasoning as the status colors: this chart
+    // always reads the same regardless of the site's light/dark theme.
     plotGroup.appendChild(el('rect', {
-      x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: 'var(--bg-elevated)'
+      x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, fill: 'var(--chart-bg)'
     }));
 
-    // Background threshold bands — only the yellow/red zones are shaded; the
-    // green "in range" zone is left as the plain chart background, matching
-    // the request's "showing the upper and lower (yellow and red area)".
+    // All three zones shaded — low/high bands red, borderline bands yellow,
+    // and the in-range band green, matching the literal traffic-light status
+    // colors used everywhere else in the app.
     var bands = [
       { from: yMin, to: thresholds.redLowMax, color: 'var(--status-red)' },
       { from: thresholds.redLowMax, to: thresholds.greenMin, color: 'var(--status-yellow)' },
+      { from: thresholds.greenMin, to: thresholds.greenMax, color: 'var(--status-green)' },
       { from: thresholds.greenMax, to: thresholds.redHighMin, color: 'var(--status-yellow)' },
       { from: thresholds.redHighMin, to: yMax, color: 'var(--status-red)' }
     ];
@@ -165,7 +171,7 @@
       if (bottom <= top) return;
       plotGroup.appendChild(el('rect', {
         x: MARGIN.left, y: top, width: plotW, height: bottom - top,
-        fill: band.color, 'fill-opacity': '0.15'
+        fill: band.color, 'fill-opacity': '0.25'
       }));
     });
 
@@ -176,10 +182,10 @@
       var y = yScale(t);
       plotGroup.appendChild(el('line', {
         x1: MARGIN.left, x2: MARGIN.left + plotW, y1: y, y2: y,
-        stroke: 'var(--text-muted)', 'stroke-width': '1', 'stroke-dasharray': '4 4'
+        stroke: 'var(--chart-text)', 'stroke-width': '1', 'stroke-dasharray': '4 4'
       }));
       var label = el('text', {
-        x: MARGIN.left - 6, y: y + 3, 'text-anchor': 'end', 'font-size': '11', fill: 'var(--text-muted)'
+        x: MARGIN.left - 6, y: y + 3, 'text-anchor': 'end', 'font-size': '13', fill: 'var(--chart-text)'
       });
       label.textContent = t.toFixed(1);
       svg.appendChild(label);
@@ -188,7 +194,7 @@
     // The glucose line, as a smooth curve through the exact same points.
     var coords = points.map(function (p, i) { return [xScale(i), yScale(p.value)]; });
     plotGroup.appendChild(el('path', {
-      d: smoothPath(coords), fill: 'none', stroke: 'var(--accent)', 'stroke-width': '2.5',
+      d: smoothPath(coords), fill: 'none', stroke: 'var(--chart-line)', 'stroke-width': '3',
       'stroke-linecap': 'round', 'stroke-linejoin': 'round'
     }));
 
@@ -201,7 +207,7 @@
       var cy = yScale(p.value);
       var label = formatDateTime(p.timestamp) + ' — ' + p.value.toFixed(1) + ' mmol/L';
 
-      var dot = el('circle', { cx: cx, cy: cy, r: '5', fill: 'var(--accent)' });
+      var dot = el('circle', { cx: cx, cy: cy, r: '6', fill: 'var(--chart-line)' });
       var title = el('title', {});
       title.textContent = label;
       dot.appendChild(title);
@@ -224,38 +230,25 @@
     // it's just the stroked outline of the exact same rounded rect).
     svg.appendChild(el('rect', {
       x: MARGIN.left, y: MARGIN.top, width: plotW, height: plotH, rx: CORNER_R, ry: CORNER_R,
-      fill: 'none', stroke: 'var(--border)', 'stroke-width': '1'
+      fill: 'none', stroke: 'var(--chart-border)', 'stroke-width': '1'
     }));
 
     // X-axis: first/last reading dates only, to keep this simple.
     if (points.length > 0) {
       var firstLabel = el('text', {
-        x: xScale(0), y: VIEW_H - MARGIN.bottom + 18, 'text-anchor': 'start', 'font-size': '11', fill: 'var(--text-muted)'
+        x: xScale(0), y: VIEW_H - MARGIN.bottom + 22, 'text-anchor': 'start', 'font-size': '13', fill: 'var(--chart-text)'
       });
       firstLabel.textContent = formatShortDate(points[0].timestamp.slice(0, 10));
       svg.appendChild(firstLabel);
 
       var lastLabel = el('text', {
-        x: xScale(points.length - 1), y: VIEW_H - MARGIN.bottom + 18, 'text-anchor': 'end', 'font-size': '11', fill: 'var(--text-muted)'
+        x: xScale(points.length - 1), y: VIEW_H - MARGIN.bottom + 22, 'text-anchor': 'end', 'font-size': '13', fill: 'var(--chart-text)'
       });
       lastLabel.textContent = formatShortDate(points[points.length - 1].timestamp.slice(0, 10));
       svg.appendChild(lastLabel);
     }
 
     mountEl.appendChild(svg);
-
-    // Colorblind-safe legend, built from the same .badge classes used for
-    // status everywhere else in the app (measurement rows, average cards,
-    // the PDF table) instead of ad hoc swatches, so it matches the rest of
-    // the site's visual language.
-    var legend = document.createElement('div');
-    legend.className = 'chart-legend';
-    legend.innerHTML =
-      '<span class="badge badge--accent"><span class="badge__icon" aria-hidden="true">●</span><span class="badge__label">Reading</span></span>' +
-      '<span class="badge badge--yellow"><span class="badge__icon" aria-hidden="true">▽△</span><span class="badge__label">Borderline zone</span></span>' +
-      '<span class="badge badge--red"><span class="badge__icon" aria-hidden="true">▼▲</span><span class="badge__label">Out-of-range zone</span></span>' +
-      '<span class="chart-legend__text"><span class="chart-legend__dash" aria-hidden="true"></span>Threshold boundary</span>';
-    mountEl.appendChild(legend);
   }
 
   window.BsChart = { render: render, hideTooltip: hideTooltip };
