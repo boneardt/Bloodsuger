@@ -66,7 +66,11 @@
   --chart-bg: #ffffff;
   --chart-border: #e6e4db;
   --chart-text: #7c7a73;
-  --chart-line: #cc785c;
+  /* White reads clearly against all three now fully-saturated band colors,
+     which the line always sits on top of (the 5 bands tile the entire plot
+     height, so there's no gap where a white line would vanish into the
+     white chart background). */
+  --chart-line: #ffffff;
   --chart-tooltip-bg: #262624;
   --chart-tooltip-text: #ffffff;
 
@@ -730,24 +734,39 @@ input[type="date"][data-datepicker] {
 
 /* ---------- Chart lightbox ---------- */
 
-/* Near-fullscreen: scales with the viewport instead of a fixed px cap, so it
-   stays genuinely large on wide monitors rather than capping out too small. */
+/* Two tries at sizing the <dialog> element itself (explicit width/height +
+   flex; then also explicit position+transform) both broke the browser's own
+   modal centering/backdrop in practice — the dialog ended up tiny and
+   mispositioned, with page content showing through on top of it. Pulling
+   back to the simplest, most standard approach: leave dialog.lightbox itself
+   almost bare (no width/height/display/position overrides), so it keeps
+   using the exact same UA-default centering that already worked correctly
+   at the old smaller size — just with transparent/reset chrome, since the
+   actual look and "near-fullscreen" sizing now live on one plain inner
+   wrapper div (.lightbox__frame) that has no top-layer/backdrop semantics
+   of its own to interact badly with. */
 dialog.lightbox {
-  background: var(--bg-elevated);
-  color: var(--text);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
   padding: 0;
-  width: 95vw;
+  border: none;
+  background: transparent;
+  color: var(--text);
   max-width: 95vw;
-  height: 90vh;
   max-height: 90vh;
-  display: flex;
-  flex-direction: column;
 }
 dialog.lightbox::backdrop {
   background: rgba(0, 0, 0, 0.5);
+}
+
+.lightbox__frame {
+  width: 95vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
 }
 
 .lightbox__header {

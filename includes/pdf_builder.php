@@ -270,12 +270,15 @@ function bs_stream_chart_pdf_download(string $from, string $to): void
         return $n <= 1 ? $chartLeft + $chartWidth / 2 : $chartLeft + $chartWidth * $i / ($n - 1);
     };
 
-    // Shaded yellow/red threshold bands — green ("in range") is left as the
-    // plain page background, matching the on-screen chart.
-    $tint = static fn (int $c): int => (int) round($c + (255 - $c) * 0.82);
+    // Shaded red/yellow/green threshold bands, matching the on-screen chart
+    // and using the exact same full-strength colors as the status badges/chips
+    // elsewhere in the app (bs_status_rgb()) — not a muted tint. tFPDF fills
+    // have no opacity control, so this is a solid block of color, same as the
+    // on-screen chart once its own opacity wash was dropped for the same reason.
     $bandDefs = [
         ['from' => $yMin, 'to' => $thresholds['red_low_max'], 'color' => 'red'],
         ['from' => $thresholds['red_low_max'], 'to' => $thresholds['green_min'], 'color' => 'yellow'],
+        ['from' => $thresholds['green_min'], 'to' => $thresholds['green_max'], 'color' => 'green'],
         ['from' => $thresholds['green_max'], 'to' => $thresholds['red_high_min'], 'color' => 'yellow'],
         ['from' => $thresholds['red_high_min'], 'to' => $yMax, 'color' => 'red'],
     ];
@@ -286,9 +289,7 @@ function bs_stream_chart_pdf_download(string $from, string $to): void
             continue;
         }
         [$r, $g, $b] = bs_status_rgb($band['color']);
-        // tFPDF fills have no opacity control, so these are drawn as fully-opaque
-        // pastel tints rather than overlaying a translucent rect like the SVG version.
-        $pdf->SetFillColor($tint($r), $tint($g), $tint($b));
+        $pdf->SetFillColor($r, $g, $b);
         $pdf->Rect($chartLeft, $top, $chartWidth, $bottom - $top, 'F');
     }
 
@@ -324,10 +325,11 @@ function bs_stream_chart_pdf_download(string $from, string $to): void
     $pdf->Cell($axisGutter - 1, 5, number_format($yMin, 1), 0, 0, 'R');
 
     // The glucose line itself, plus a small square marker at each reading
-    // (this tFPDF build has no circle primitive to rely on).
-    $pdf->SetDrawColor(204, 120, 92); // approximates --accent (#cc785c); not a
-                                      // status color, so bs_status_rgb() doesn't cover it.
-    $pdf->SetFillColor(204, 120, 92);
+    // (this tFPDF build has no circle primitive to rely on). White reads
+    // clearly against all three now fully-saturated band colors, which the
+    // line always sits on top of (the 5 bands tile the entire plot height).
+    $pdf->SetDrawColor(255, 255, 255);
+    $pdf->SetFillColor(255, 255, 255);
     $prevX = null;
     $prevY = null;
     foreach ($points as $i => $point) {
@@ -357,14 +359,22 @@ function bs_stream_chart_pdf_download(string $from, string $to): void
     $legendY = $chartBottom + 14;
     $pdf->SetFont('DejaVu', '', 9);
     $legendItems = [
-        ['color' => [204, 120, 92], 'label' => 'Reading'],
+        ['color' => [255, 255, 255], 'label' => 'Reading', 'outline' => true],
         ['color' => bs_status_rgb('yellow'), 'label' => 'Borderline zone (BL/BH)'],
         ['color' => bs_status_rgb('red'), 'label' => 'Out-of-range zone (L/H)'],
     ];
     $legendX = $chartLeft;
     foreach ($legendItems as $item) {
         $pdf->SetFillColor($item['color'][0], $item['color'][1], $item['color'][2]);
-        $pdf->Rect($legendX, $legendY + 1, 4, 4, 'F');
+        // The "Reading" swatch sits on the plain white page (not inside a
+        // colored band the way the line itself does), so a white fill needs
+        // its own outline here to stay visible at all.
+        if (!empty($item['outline'])) {
+            $pdf->SetDrawColor(130, 130, 130);
+            $pdf->Rect($legendX, $legendY + 1, 4, 4, 'DF');
+        } else {
+            $pdf->Rect($legendX, $legendY + 1, 4, 4, 'F');
+        }
         $pdf->SetXY($legendX + 6, $legendY);
         $pdf->Cell(60, 6, $item['label']);
         $legendX += 60;

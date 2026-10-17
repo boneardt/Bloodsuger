@@ -171,7 +171,7 @@
       if (bottom <= top) return;
       plotGroup.appendChild(el('rect', {
         x: MARGIN.left, y: top, width: plotW, height: bottom - top,
-        fill: band.color, 'fill-opacity': '0.25'
+        fill: band.color
       }));
     });
 

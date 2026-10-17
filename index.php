@@ -85,16 +85,18 @@ require __DIR__ . '/includes/layout_header.php';
 </section>
 
 <dialog id="chart-lightbox" class="lightbox" aria-label="Glucose chart">
-  <div class="lightbox__header">
-    <h2>Glucose chart</h2>
-    <button type="button" class="lightbox__close" aria-label="Close">&times;</button>
-  </div>
-  <div class="lightbox__body">
-    <div id="chart-mount"></div>
-    <p id="chart-empty" hidden>No measurements in this date range.</p>
-  </div>
-  <div class="lightbox__footer">
-    <a id="chart-pdf-link" class="button button--primary" href="#" data-base-url="<?= bs_e(bs_url('export_chart_pdf.php')) ?>">Save to PDF</a>
+  <div class="lightbox__frame">
+    <div class="lightbox__header">
+      <h2>Glucose chart</h2>
+      <button type="button" class="lightbox__close" aria-label="Close">&times;</button>
+    </div>
+    <div class="lightbox__body">
+      <div id="chart-mount"></div>
+      <p id="chart-empty" hidden>No measurements in this date range.</p>
+    </div>
+    <div class="lightbox__footer">
+      <a id="chart-pdf-link" class="button button--primary" href="#" data-base-url="<?= bs_e(bs_url('export_chart_pdf.php')) ?>">Save to PDF</a>
+    </div>
   </div>
 </dialog>
 
